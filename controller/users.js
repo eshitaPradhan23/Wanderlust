@@ -6,10 +6,25 @@ module.exports.renderSignUpPage = (req ,res) => {
 };
 
 
-module.exports.signUpUser = async(req,res) =>{
+module.exports.signUpUser = async(req,res,next) =>{
     try{
-        let { username, email ,password } = req.body;
-        const newUser = new User({email, username});
+        let { username, password } = req.body;
+        const email = (req.body.email || "").trim() || undefined;
+        const phone = (req.body.phone || "").trim() || undefined;
+
+        if(!email && !phone){
+            req.flash("error", "Please provide an email or a phone number");
+            return res.redirect("/signup");
+        }
+        if(phone){
+            const digits = phone.replace(/[\s-]/g, "");
+            if(!/^\+?\d{7,15}$/.test(digits)){
+                req.flash("error", "Please enter a valid phone number");
+                return res.redirect("/signup");
+            }
+        }
+
+        const newUser = new User({email, phone, username});
         const registerdUser = await User.register(newUser,password);
         console.log(registerdUser);
         req.login(registerdUser,(err) =>{
